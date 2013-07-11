@@ -10,10 +10,9 @@ Find the sum of all products whose multiplicand/multiplier/product identity can 
 HINT: Some products can be obtained in more than one way so be sure to only include it once in your sum.
 */
 
-val digits = (1 to 9).toSet
-def isPandigital(n: Int): Boolean = {
-  val nDigits = n.toString.toIndexedSeq[Char].map(d => d.asDigit)
-  val otherDigits = (digits -- nDigits).toIndexedSeq
+def isProductPandigital(n: Int): Boolean = {
+  val nDigits = n.toString.toIndexedSeq.map(d => d.asDigit)
+  val otherDigits = ((1 to 9).toSet -- nDigits).toIndexedSeq
   lazy val hasProduct = (1 to otherDigits.size / 2)
     .map(otherDigits.combinations(_)).flatten
     .map(_.permutations).flatten
@@ -21,4 +20,4 @@ def isPandigital(n: Int): Boolean = {
     .exists(m1m2 => (m1m2._1.mkString.toInt * m1m2._2.mkString.toInt == n))
   !nDigits.contains(0) && nDigits == nDigits.distinct && hasProduct
 }
-val A32 = (1234 to 9876).filter(isPandigital(_)).sum
+val A32 = (1234 to 9876).filter(isProductPandigital(_)).sum
