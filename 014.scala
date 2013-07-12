@@ -26,7 +26,7 @@ def collatzIters(n: Long, acc: Int): (Long, Int) =
     }
     collatzIters(next, acc + 1)
   }
-val A14 = (1L to 1000000L).foldLeft((0L, 0)) {
+val A14 = (1L until 1000000L).foldLeft((0L, 0)) {
   (acc: (Long, Int), n: Long) =>
     val next = collatzIters(n, 1)
     if (acc._2 > next._2) acc else (n, next._2)

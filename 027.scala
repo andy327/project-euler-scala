@@ -23,12 +23,12 @@ produces the maximum number of primes for consecutive values of n, starting with
 */
 
 def isPrime(n: Long) = (n >= 2 && (2 to scala.math.sqrt(n).toInt).dropWhile(n % _ != 0).size == 0)
-val primes = Stream.iterate(2)(_ + 1).filter(isPrime(_))
+val primes = Stream.from(2).filter(isPrime(_))
 val primesUnder1k = primes.takeWhile(_ < 1000)
 def func(a: Int, b: Int): Int => Int = (n: Int) => scala.math.pow(n, 2).toInt + a * n + b
 def primeStreak(a: Int, b: Int): Int = {
   val f = func(a, b)
-  Stream.iterate(0)(_ + 1).indexWhere(n => !isPrime(f(n)))
+  Stream.from(0).indexWhere(n => !isPrime(f(n)))
 }
 val testPairs = for (b <- primesUnder1k; a <- (-999 to 999)) yield (a, b)
 val topPair = testPairs.maxBy(ab => { val (a, b) = ab; primeStreak(a, b) })

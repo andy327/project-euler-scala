@@ -46,10 +46,10 @@ val matrix = List(
   "20 73 35 29 78 31 90 01 74 31 49 71 48 86 81 16 23 57 05 54",
   "01 70 54 71 83 51 54 69 16 92 33 48 61 43 52 01 89 19 67 48"
 ).map(_.sliding(2, 3).map(_.toInt).toList)
-val indexedMatrix = matrix.zipWithIndex.map(x => x._1.map((_, x._2)).zipWithIndex).map(_.map(x => (x._1._1, x._1._2, x._2))).flatten
+val indexedMatrix = matrix.zipWithIndex.flatMap{ case (xs, row) => xs.map((_, row)).zipWithIndex }.map{ case((n, row), col) => (n, row, col) }
 def maxSlidingProduct(list: List[(Int, Int, Int)]): Int = list.map(_._1).sliding(4, 1).map(_.product).max
-val maxHorizontal = indexedMatrix.groupBy(_._2).values.map(maxSlidingProduct(_)).max
-val maxVertical = indexedMatrix.groupBy(_._3).values.map(maxSlidingProduct(_)).max
-val maxDiagonal1 = indexedMatrix.groupBy(ij => ij._2 + ij._3).values.map(maxSlidingProduct(_)).max
-val maxDiagonal2 = indexedMatrix.groupBy(ij => ij._2 - ij._3).values.map(maxSlidingProduct(_)).max
+val maxHorizontal = indexedMatrix.groupBy{ case (n, i, j) => i }.values.map(maxSlidingProduct(_)).max
+val maxVertical = indexedMatrix.groupBy{ case (n, i, j) => j }.values.map(maxSlidingProduct(_)).max
+val maxDiagonal1 = indexedMatrix.groupBy{ case (n, i, j) => i + j }.values.map(maxSlidingProduct(_)).max
+val maxDiagonal2 = indexedMatrix.groupBy{ case (n, i, j) => i - j }.values.map(maxSlidingProduct(_)).max
 val A11 = Seq(maxHorizontal, maxVertical, maxDiagonal1, maxDiagonal2).max

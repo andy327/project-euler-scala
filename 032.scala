@@ -17,7 +17,7 @@ def isProductPandigital(n: Int): Boolean = {
     .map(otherDigits.combinations(_)).flatten
     .map(_.permutations).flatten
     .map(m1 => (otherDigits diff m1).permutations.map((m1, _)).toList).flatten
-    .exists(m1m2 => (m1m2._1.mkString.toInt * m1m2._2.mkString.toInt == n))
+    .exists{ case (m1, m2) => m1.mkString.toInt * m2.mkString.toInt == n }
   !nDigits.contains(0) && nDigits == nDigits.distinct && hasProduct
 }
 val A32 = (1234 to 9876).filter(isProductPandigital(_)).sum

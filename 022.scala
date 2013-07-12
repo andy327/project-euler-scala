@@ -14,4 +14,4 @@ What is the total of all the name scores in the file?
 val namesList = scala.io.Source.fromFile("names.txt").mkString.replaceAll("\"", "").split(",")
 def charValue(ch: Char): Int = ch.toInt - 64
 def nameValue(s: String): Int = s.toList.map(charValue(_)).sum
-val A22 = namesList.sorted.zipWithIndex.map(pair => nameValue(pair._1) * (pair._2 + 1)).sum
+val A22 = namesList.sorted.zipWithIndex.map{ case (name, i) => nameValue(name) * (i + 1) }.sum

@@ -16,8 +16,5 @@ nearly two-thousand common English words, how many are triangle words?
 val wordsList = scala.io.Source.fromFile("words.txt").mkString.replaceAll("\"", "").split(",")
 def charValue(ch: Char): Int = ch.toInt - 64
 def wordValue(s: String): Int = s.toList.map(charValue(_)).sum
-def isTriangular(r: Int): Boolean = {
-  val n = scala.math.sqrt(2 * r).toInt
-  n * (n + 1) == 2 * r
-}
+def isTriangular(n: Int): Boolean = (scala.math.sqrt(8 * n + 1) - 1) % 2 == 0
 val A42 = wordsList.count(w => isTriangular(wordValue(w)))

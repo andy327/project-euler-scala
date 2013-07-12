@@ -5,5 +5,5 @@ What is the 10,001st prime number?
 */
 
 def isPrime(n: Long) = (n >= 2 && (2 to scala.math.sqrt(n).toInt).dropWhile(n % _ != 0).size == 0)
-val primes = Stream.iterate(2)(_ + 1).filter(isPrime(_))
+val primes = Stream.from(2).filter(isPrime(_))
 val A7 = primes(10000)

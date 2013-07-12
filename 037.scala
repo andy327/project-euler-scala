@@ -9,4 +9,4 @@ NOTE: 2, 3, 5, and 7 are not considered to be truncatable primes.
 
 def isPrime(n: Long) = (n >= 2 && (2 to scala.math.sqrt(n).toInt).dropWhile(n % _ != 0).size == 0)
 def slices(s: String): Seq[Int] = (1 to s.size - 1).map(s.take(_).toInt) ++ (1 to s.size - 1).map(s.drop(_).toInt)
-val A37 = Stream.iterate(11)(_ + 1).filter(isPrime(_)).filter(p => slices(p.toString).forall(isPrime(_))).take(11).sum
+val A37 = Stream.from(11).filter(isPrime(_)).filter(p => slices(p.toString).forall(isPrime(_))).take(11).sum

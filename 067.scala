@@ -20,8 +20,9 @@ There is an efficient algorithm to solve it. ;o)
 val triangleBig = scala.io.Source.fromFile("triangle.txt").mkString.split("\n").toList
 def bestPathSum(triangleStrings: List[String]): Int = {
   val triangle = triangleStrings.map(_.sliding(2, 3).map(_.toInt).toList)
-  val indexedTriangle = triangle.zipWithIndex.map(x => x._1.map((_, x._2)).zipWithIndex).map(_.map(x => (x._1._1, x._1._2, x._2))).flatten
-  val triangleMap = indexedTriangle.map(x => (x._2, x._3) -> x._1).toMap
+  val indexedTriangle = triangle.zipWithIndex
+    .flatMap{ case (xs, row) => xs.map((_, row)).zipWithIndex }.map{ case((n, row), col) => (n, row, col) }
+  val triangleMap = indexedTriangle.map{ case(n, i, j) => (i, j) -> n }.toMap
   val pathSize = triangle.size
   var pathTable = Map.empty[(Int, Int), Int]
   def maxPathSum(i: Int, j: Int): Int = {
