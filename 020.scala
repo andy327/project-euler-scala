@@ -8,5 +8,5 @@ and the sum of the digits in the number 10! is 3 + 6 + 2 + 8 + 8 + 0 + 0 = 27.
 Find the sum of the digits in the number 100!
 */
 
-implicit def impFactorial(n: Int) = new { def `!`: BigInt = (BigInt(1) /: (1 to n))(_ * _) }
-val A20 = (100!).toString.map(_.asDigit).sum
+def factorial(n: Int): BigInt = (BigInt(1) /: (1 to n))(_ * _)
+val A20 = factorial(100).toString.map(_.asDigit).sum
