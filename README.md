@@ -4,4 +4,4 @@ I've always wanted to go deep into the Project Euler problems, both because it w
 
 Whenever I feel like tackling a new problem, I'll try to post my best solution here. I'll also edit a solution if I find a better, more succint or 'Scala'-like way of expressing the answer. I'll also try to keep up with changes from the latest Scala releases. You can friend me with the key ```19176862301052_5c938324d4a42ad288e91aa8b50f7ca8```
 
-[![andresperez](http://projecteuler.net/profile/andresperez.png)](http://projecteuler.net/)
+[![andresperez](http://projecteuler.net/profile/andresperez.png?)](http://projecteuler.net/profile/andresperez.png)
