@@ -37,208 +37,87 @@ each player's hand is in no specific order, and in each hand there is a clear wi
 How many hands does Player 1 win?
 */
 
-import scala.collection.SetLike
-import scala.collection.generic.CanBuildFrom
-import scala.collection.mutable.{ Builder, SetBuilder }
-
-sealed abstract class Suit
-case object Spades extends Suit
-case object Hearts extends Suit
-case object Diamonds extends Suit
-case object Clubs extends Suit
-
-case class Card(value: Int, suit: Suit) {
-  assert(value >= 1 && value <= 13)
-  private val valueRepr: String = value match {
-    case 13 => "K"
-    case 12 => "Q"
-    case 11 => "J"
-    case 1 => "A"
-    case n => n.toString
-  }
-  private val suitRepr: String = suit match {
-    case Spades => "S"
-    case Hearts => "H"
-    case Diamonds => "D"
-    case Clubs => "C"
-  }
-  override def toString: String = valueRepr.concat(suitRepr)
-}
+sealed trait Suit { def toString: String }
+case object Spades extends Suit { override def toString: String = "\u2660" }
+case object Hearts extends Suit { override def toString: String = "\u2764" }
+case object Diamonds extends Suit { override def toString: String = "\u2666" }
+case object Clubs extends Suit { override def toString: String = "\u2663" }
 
 object Card {
-  def from(card: String): Card = {
-    val suit = card.last.toString match {
+  def apply(stringRepr: String): Card = {
+    val rank: Int = stringRepr.dropRight(1) match {
+      case "A" => 14
+      case "K" => 13
+      case "Q" => 12
+      case "J" => 11
+      case "T" => 10
+      case n   => n.toInt
+    }
+    val suit: Suit = stringRepr.takeRight(1) match {
       case "S" => Spades
       case "H" => Hearts
       case "D" => Diamonds
       case "C" => Clubs
     }
-    val value = card.dropRight(1) match {
-      case "K" => 13
-      case "Q" => 12
-      case "J" => 11
-      case "T" => 10
-      case "A" => 1
-      case n => n.toInt
-    }
-    new Card(value, suit)
+    Card(rank, suit)
   }
 }
-
-class Hand(seq: Card*) extends Set[Card] with SetLike[Card, Hand] with Ordered[Hand] {
-  override def empty: Hand = new Hand()
-  val values: Seq[Int] = seq.map(_.value)
-  val suits: Seq[Suit] = seq.map(_.suit)
-  val valueCounts: Iterable[Int] = values.groupBy(identity).mapValues(_.size).values
-  val suitCounts: Iterable[Int] = suits.groupBy(identity).mapValues(_.size).values
-  lazy val valueCardMap: Map[Int, Hand] = seq.groupBy(_.value).map(h => h._1 -> Hand(h._2: _*))
-  lazy val rankedCardMap: Map[Int, Hand] = if (valueCardMap.keySet(1)) valueCardMap + (14 -> valueCardMap(1)) - 1 else valueCardMap
-  lazy val suitCardMap: Map[Suit, Hand] = seq.groupBy(_.suit).map(h => h._1 -> Hand(h._2: _*))
-  lazy val handType: HandType = Hand.types.find(_.foundIn(this)).getOrElse(Empty)
-  lazy val score: Int = handType.score(this)
-  def bestHand: Hand = handType.bestHand(this).get
-  def highValue: Int = rankedCardMap.maxBy(_._1)._1
-  def has(hType: HandType): Boolean = hType.foundIn(this)
-  def hasNo(hType: HandType): Boolean = !has(hType)
-  def beats(hType: HandType): Boolean = handType.beats(hType)
-  def beats(that: Hand): Boolean = this > that
-  def compare(that: Hand) = this.score - that.score
-  def contains(elem: Card): Boolean = seq.exists(elem == _)
-  def iterator: Iterator[Card] = seq.iterator
-  def +(elem: Card): Hand = if (seq contains elem) this else new Hand(elem +: seq: _*)
-  def -(elem: Card): Hand = if (!(seq contains elem)) this else new Hand(seq filterNot (elem == _): _*)
-  override def toString: String = seq.mkString("[", " ", "]")
-}
-
-object Hand {
-  def empty: Hand = new Hand()
-  def types = List(StraightFlush, FourKind, FullHouse, Flush, Straight, ThreeKind, TwoPair, Pair, HighCard, Empty)
-  def newBuilder: Builder[Card, Hand] = new SetBuilder[Card, Hand](empty)
-  def apply(elems: Card*): Hand = (empty /: elems)(_ + _)
-  def apply(elems: Set[Card]): Hand = (empty /: elems)(_ + _)
-  def HandCanBuildFromHand = new CanBuildFrom[Hand, Card, Hand] {
-    def apply(from: Hand) = newBuilder
-    def apply() = newBuilder
+case class Card(rank: Int, suit: Suit) {
+  assert(rank >= 2 && rank <= 14, s"Rank can only be a value from 2 to 14 (Ace). Rank = $rank.")
+  val rankString = rank match {
+    case 14 => "A"
+    case 13 => "K"
+    case 12 => "Q"
+    case 11 => "J"
+    case 10 => "T"
+    case n  => n.toString
   }
-  def HandCanBuildFromSet = new CanBuildFrom[Set[Card], Card, Hand] {
-    def apply(from: Set[Card]) = newBuilder
-    def apply() = newBuilder
-  }
-  def from(hand: String): Hand = Hand.apply(hand.split(" ").map(Card.from(_)).toSet)
-  def from(hand: Seq[String]): Hand = Hand.from(hand.mkString(" "))
+  override def toString: String = s"$rankString$suit"
 }
 
-sealed abstract class HandType {
-  protected def typeScore: Int
-  protected def handScore(hand: Hand): Int
-  def score(hand: Hand): Int = if (notFoundIn(hand)) 0 else typeScore * 1E7.toInt + handScore(hand)
-  def beats(hType: HandType): Boolean = typeScore > hType.typeScore
-  def foundIn(hand: Hand): Boolean
-  def notFoundIn(hand: Hand): Boolean = !foundIn(hand)
-  def bestHand(hand: Hand): Option[Hand] = if (foundIn(hand)) Some(getBestHand(hand)) else None
-  protected def getBestHand(hand: Hand): Hand
+object HandType extends Enumeration {
+  val HighCard, OnePair, TwoPair, ThreeOfAKind, Straight, Flush, FullHouse, FourOfAKind, StraightFlush, RoyalFlush = Value
 }
 
-case object Empty extends HandType {
-  val typeScore: Int = 0
-  def handScore(hand: Hand): Int = 0
-  def foundIn(hand: Hand): Boolean = true
-  def getBestHand(hand: Hand): Hand = Hand.empty
+case class Hand(cards: Set[Card]) extends Ordered[Hand] {
+  import HandType._
+  import scala.math.Ordering.Implicits._
+  require(cards.size == 5, "Hands must comprise of 5 Cards.")
+
+  val ranks: Set[Int] = cards.map(_.rank)
+  val suits: Set[Suit] = cards.map(_.suit)
+  val groups: Map[Int, Set[Card]] = cards.groupBy { card: Card => cards.count(_.rank == card.rank) }.toMap
+
+  val isFlush: Boolean = cards.groupBy(_.suit).size == 1
+  val isRoyal: Boolean = ranks == Set(14, 13, 12, 11, 10)
+  val isBicycle: Boolean = ranks == Set(14, 2, 3, 4, 5)
+  val isStraight: Boolean = isBicycle || (ranks.size == 5 && ranks.max - ranks.min == 4)
+
+  val handType: HandType.Value =
+    if (isRoyal && isFlush)                             RoyalFlush
+    else if (isStraight && isFlush)                     StraightFlush
+    else if (groups.contains(4))                        FourOfAKind
+    else if (groups.contains(3) && groups.contains(2))  FullHouse
+    else if (isFlush)                                   Flush
+    else if (isStraight)                                Straight
+    else if (groups.contains(3))                        ThreeOfAKind
+    else if (groups.contains(2) && groups(2).size == 4) TwoPair
+    else if (groups.contains(2))                        OnePair
+    else                                                HighCard
+  val rankValues: Seq[Int] = groups
+    .mapValues(_.toSeq.map(_.rank).sorted.reverse)
+    .mapValues(cards => if (isBicycle) cards.tail :+ cards.head else cards)
+    .flatMap(_._2).toSeq
+
+  def compare(that: Hand): Int = Ordering.by { hand: Hand => (hand.handType, hand.rankValues) }.compare(this, that)
+
+  override def toString: String = cards.mkString("[ ", ", ", " ]")
 }
 
-case object HighCard extends HandType {
-  val typeScore: Int = 1
-  def handScore(hand: Hand): Int = if (hand.values.contains(1)) 14 else hand.values.max
-  def foundIn(hand: Hand): Boolean = !hand.isEmpty
-  def getBestHand(hand: Hand): Hand = Hand(hand.rankedCardMap.get(hand.highValue).head.head)
-}
-
-case object Pair extends HandType {
-  val typeScore: Int = 2
-  def handScore(hand: Hand): Int = hand.rankedCardMap.filter(_._2.size >= 2).keySet.max
-  def foundIn(hand: Hand): Boolean = !hand.valueCounts.filter(_ >= 2).isEmpty
-  def getBestHand(hand: Hand): Hand = hand.rankedCardMap.filter(_._2.size >= 2).maxBy(_._1)._2.take(2)
-}
-
-case object TwoPair extends HandType {
-  val typeScore: Int = 3
-  def handScore(hand: Hand): Int = {
-    val top2: List[Int] = hand.rankedCardMap.filter(_._2.size >= 2).keySet.toList.sorted.takeRight(2)
-    (top2(0) + top2(1) * 14)
-  }
-  def foundIn(hand: Hand): Boolean = hand.valueCounts.filter(_ >= 2).size >= 2
-  def getBestHand(hand: Hand): Hand = {
-    val top2: List[Hand] = hand.rankedCardMap.filter(_._2.size >= 2).toList.sortBy(_._1).takeRight(2).map(_._2.take(2))
-    top2(0) ++ top2(1)
-  }
-}
-
-case object ThreeKind extends HandType {
-  val typeScore: Int = 4
-  def handScore(hand: Hand): Int = hand.rankedCardMap.filter(_._2.size >= 3).keySet.max
-  def foundIn(hand: Hand): Boolean = !hand.valueCounts.filter(_ >= 3).isEmpty
-  def getBestHand(hand: Hand): Hand = hand.rankedCardMap.filter(_._2.size >= 3).maxBy(_._1)._2.take(3)
-}
-
-case object Straight extends HandType {
-  val typeScore: Int = 5
-  def handScore(hand: Hand): Int = getBestHand(hand) match {
-    case h if h.values.toSet == Set(1, 2, 3, 4, 5) => 5
-    case h => if (h.values.contains(1)) 14 else h.values.max
-  }
-  private def straights(hand: Hand): List[Seq[Int]] = {
-    val values: Seq[Int] = hand.values.distinct.sorted
-    val matches: Seq[Int] = if (values.contains(1)) values.sorted :+ 14 else values.sorted
-    matches.sliding(5, 1).filter(_.size >= 5).filter(five => five(4) - five(0) == 4).toList
-  }
-  def foundIn(hand: Hand): Boolean = !straights(hand).isEmpty
-  def getBestHand(hand: Hand): Hand =
-    Hand(hand.valueCardMap.filter(kv => straights(hand).maxBy(_.max).contains(kv._1)).mapValues(_.head).values.toSeq: _*)
-}
-
-case object Flush extends HandType {
-  val typeScore: Int = 6
-  def handScore(hand: Hand): Int = rankFlush(getBestHand(hand))
-  private def flushes(hand: Hand): Iterable[Hand] = hand.suitCardMap.filter(_._2.size >= 5)
-    .mapValues(cards => Hand(cards.toSeq: _*)).values
-  private def rankFlush(hand: Hand): Int = hand.values.map(math.pow(2, _)).sum.toInt
-  def foundIn(hand: Hand): Boolean = !hand.suitCounts.filter(_ >= 5).isEmpty
-  def getBestHand(hand: Hand): Hand = flushes(hand).maxBy(rankFlush(_))
-}
-
-case object FullHouse extends HandType {
-  val typeScore: Int = 7
-  def handScore(hand: Hand): Int = getBestHand(hand).rankedCardMap.map(
-    kv => kv._2.size match {
-      case 3 => 14 * kv._1
-      case 2 => kv._1
-      }).sum
-  def foundIn(hand: Hand): Boolean = hand.valueCounts.filter(_ >= 2).toSet.size >= 2
-  def getBestHand(hand: Hand): Hand = {
-    val bestTriple: Hand = hand.rankedCardMap.filter(_._2.size >= 3).maxBy(_._1)._2.take(3)
-    val bestPair: Hand = hand.rankedCardMap.filterKeys(_ != bestTriple.highValue).filter(_._2.size >= 2).maxBy(_._1)._2.take(2)
-    bestTriple ++ bestPair
-  }
-}
-
-case object FourKind extends HandType {
-  val typeScore: Int = 8
-  def handScore(hand: Hand): Int = hand.rankedCardMap.filter(_._2.size >= 4).keySet.max
-  def foundIn(hand: Hand): Boolean = !hand.valueCounts.filter(_ >= 4).isEmpty
-  def getBestHand(hand: Hand): Hand = hand.rankedCardMap.filter(_._2.size >= 4).maxBy(_._1)._2
-}
-
-case object StraightFlush extends HandType {
-  val typeScore: Int = 9
-  def handScore(hand: Hand): Int = rankFlush(getBestHand(hand))
-  private def rankFlush(hand: Hand): Int = hand.values.map(math.pow(2, _)).sum.toInt
-  private def flushes(hand: Hand): Iterable[Hand] = hand.suitCardMap.filter(_._2.size >= 5)
-    .mapValues(cards => Hand(cards.toSeq: _*)).values
-  private def straightFlushes(hand: Hand): Iterable[Hand] = flushes(hand).filter(Straight.foundIn(_)).map(Straight.getBestHand(_))
-  def foundIn(hand: Hand): Boolean = !straightFlushes(hand).isEmpty
-  def getBestHand(hand: Hand): Hand = straightFlushes(hand).maxBy(rankFlush(_))
-}
 
 val pokerRounds = scala.io.Source.fromFile("poker.txt").mkString.split("\n").toList
-val pokerHands = pokerRounds.map(_.split(" ")).map(all => (Hand.from(all.take(5)), Hand.from(all.takeRight(5))))
-val A54 = pokerHands.filter(hs => hs._1 > hs._2).size
+val pokerHands = pokerRounds
+  .map(_.split(" ").map(Card(_)))
+  .map(allCards => (allCards.take(5).toSet, allCards.takeRight(5).toSet))
+  .map { case (leftCards, rightCards) => (Hand(leftCards), Hand(rightCards)) }
+val A54 = pokerHands.count { case (hand1, hand2) => hand1 > hand2 }
