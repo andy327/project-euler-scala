@@ -79,9 +79,12 @@ object HandType extends Enumeration {
   val HighCard, OnePair, TwoPair, ThreeOfAKind, Straight, Flush, FullHouse, FourOfAKind, StraightFlush, RoyalFlush = Value
 }
 
+object Hand {
+  import scala.math.Ordering.Implicits._
+  val handOrdering = Ordering.by { hand: Hand => (hand.handType, hand.rankValues) }
+}
 case class Hand(cards: Set[Card]) extends Ordered[Hand] {
   import HandType._
-  import scala.math.Ordering.Implicits._
   require(cards.size == 5, "Hands must comprise of 5 Cards.")
 
   val ranks: Set[Int] = cards.map(_.rank)
@@ -109,11 +112,10 @@ case class Hand(cards: Set[Card]) extends Ordered[Hand] {
     .mapValues(cards => if (isBicycle) cards.tail :+ cards.head else cards)
     .flatMap(_._2).toSeq
 
-  def compare(that: Hand): Int = Ordering.by { hand: Hand => (hand.handType, hand.rankValues) }.compare(this, that)
+  def compare(that: Hand): Int = Hand.handOrdering.compare(this, that)
 
   override def toString: String = cards.mkString("[ ", ", ", " ]")
 }
-
 
 val pokerRounds = scala.io.Source.fromFile("poker.txt").mkString.split("\n").toList
 val pokerHands = pokerRounds
