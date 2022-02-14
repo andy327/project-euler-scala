@@ -37,6 +37,15 @@ each player's hand is in no specific order, and in each hand there is a clear wi
 How many hands does Player 1 win?
 */
 
+object Suit {
+  def apply(stringRepr: String): Suit = stringRepr match {
+    case "S" => Spades
+    case "H" => Hearts
+    case "D" => Diamonds
+    case "C" => Clubs
+    case _ => sys.error(s"Invalid Suit representation: $stringRepr")
+  }
+}
 sealed trait Suit { def toString: String }
 case object Spades extends Suit { override def toString: String = "\u2660" }
 case object Hearts extends Suit { override def toString: String = "\u2764" }
@@ -53,18 +62,13 @@ object Card {
       case "T" => 10
       case n   => n.toInt
     }
-    val suit: Suit = stringRepr.takeRight(1) match {
-      case "S" => Spades
-      case "H" => Hearts
-      case "D" => Diamonds
-      case "C" => Clubs
-    }
+    val suit: Suit = Suit(stringRepr.takeRight(1))
     Card(rank, suit)
   }
 }
 case class Card(rank: Int, suit: Suit) {
   assert(rank >= 2 && rank <= 14, s"Rank can only be a value from 2 to 14 (Ace). Rank = $rank.")
-  val rankString = rank match {
+  val rankString: String = rank match {
     case 14 => "A"
     case 13 => "K"
     case 12 => "Q"
@@ -81,7 +85,7 @@ object HandType extends Enumeration {
 
 object Hand {
   import scala.math.Ordering.Implicits._
-  val handOrdering = Ordering.by { hand: Hand => (hand.handType, hand.rankValues) }
+  val handOrdering: Ordering[Hand] = Ordering.by { hand: Hand => (hand.handType, hand.rankValues) }
 }
 case class Hand(cards: Set[Card]) extends Ordered[Hand] {
   import HandType._
@@ -110,7 +114,8 @@ case class Hand(cards: Set[Card]) extends Ordered[Hand] {
   val rankValues: Seq[Int] = groups
     .mapValues(_.toSeq.map(_.rank).sorted.reverse)
     .mapValues(cards => if (isBicycle) cards.tail :+ cards.head else cards)
-    .flatMap(_._2).toSeq
+    .flatMap(_._2)
+    .toSeq
 
   def compare(that: Hand): Int = Hand.handOrdering.compare(this, that)
 
