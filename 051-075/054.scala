@@ -112,10 +112,11 @@ case class Hand(cards: Set[Card]) extends Ordered[Hand] {
     else if (groups.contains(2))                        OnePair
     else                                                HighCard
   val rankValues: Seq[Int] = groups
-    .mapValues(_.toSeq.map(_.rank).sorted.reverse)
-    .mapValues(cards => if (isBicycle) cards.tail :+ cards.head else cards)
-    .flatMap(_._2)
+    .mapValues(_.toSeq.map(_.rank).sorted.reverse) // sort within groups
+    .mapValues(ranks => if (isBicycle) ranks.tail :+ ranks.head else ranks)
     .toSeq
+    .sortBy(_._1).reverse // sort larger grouped ranks first
+    .flatMap(_._2)
 
   def compare(that: Hand): Int = Hand.handOrdering.compare(this, that)
 
